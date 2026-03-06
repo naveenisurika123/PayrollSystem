@@ -186,4 +186,267 @@ void loadFromFile() {
     }
 
     fclose(fp);
+
+}
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX 100
+
+struct Employee {
+    int emp_id;
+    char name[50];
+    float basic_salary;
+    float tax;
+    float net_salary;
+};
+
+struct Employee emp[MAX];
+int count = 0;
+
+// Prototypes
+float calculateTax(float salary);
+void calculateNetSalary(struct Employee *e);
+void addEmployee();
+void displayEmployee(int id);
+void saveToFile();
+void loadFromFile();
+int isDuplicateID(int id);
+void deleteEmployee(int id);
+void updateEmployee(int id);
+
+int main() {
+
+    int choice, id;
+
+    loadFromFile();
+
+    do {
+        printf("\n========== Payroll Management System ==========\n");
+        printf("Total Employees: %d\n", count);
+        printf("1. Add Employee\n");
+        printf("2. Display Employee\n");
+        printf("3. Update Employee\n");
+        printf("4. Delete Employee\n");
+        printf("5. Save to File\n");
+        printf("6. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch(choice) {
+
+            case 1:
+                addEmployee();
+                break;
+
+            case 2:
+                printf("Enter Employee ID: ");
+                scanf("%d", &id);
+                displayEmployee(id);
+                break;
+
+            case 3:
+                printf("Enter Employee ID to update: ");
+                scanf("%d", &id);
+                updateEmployee(id);
+                break;
+
+            case 4:
+                printf("Enter Employee ID to delete: ");
+                scanf("%d", &id);
+                deleteEmployee(id);
+                break;
+
+            case 5:
+                saveToFile();
+                break;
+
+            case 6:
+                saveToFile();
+                printf("Program exited successfully.\n");
+                break;
+
+            default:
+                printf("Invalid choice!\n");
+        }
+
+    } while(choice != 6);
+
+    return 0;
+}
+
+// Tax
+float calculateTax(float salary) {
+    if (salary < 10000) return 0;
+    else if (salary <= 30000) return salary * 0.10;
+    else if (salary <= 50000) return salary * 0.20;
+    else return salary * 0.30;
+}
+
+// Net Salary
+void calculateNetSalary(struct Employee *e) {
+    e->tax = calculateTax(e->basic_salary);
+    e->net_salary = e->basic_salary - e->tax;
+}
+
+// Duplicate Check
+int isDuplicateID(int id) {
+    for(int i=0;i<count;i++)
+        if(emp[i].emp_id == id)
+            return 1;
+    return 0;
+}
+
+// Add
+void addEmployee() {
+
+    if(count >= MAX){
+        printf("Employee limit reached!\n");
+        return;
+    }
+
+    int id;
+    printf("Enter Employee ID: ");
+    scanf("%d",&id);
+
+    if(isDuplicateID(id)){
+        printf("Error: ID already exists!\n");
+        return;
+    }
+
+    emp[count].emp_id = id;
+
+    printf("Enter Name: ");
+    scanf(" %[^\n]", emp[count].name);
+
+    printf("Enter Basic Salary: ");
+    scanf("%f",&emp[count].basic_salary);
+
+    if(emp[count].basic_salary < 0){
+        printf("Salary cannot be negative!\n");
+        return;
+    }
+
+    calculateNetSalary(&emp[count]);
+
+    count++;
+
+    saveToFile();
+
+    printf("Employee added and saved successfully.\n");
+}
+
+// Display
+void displayEmployee(int id){
+    for(int i=0;i<count;i++){
+        if(emp[i].emp_id == id){
+            printf("\nID: %d\nName: %s\nSalary: %.2f\nTax: %.2f\nNet: %.2f\n",
+                   emp[i].emp_id,
+                   emp[i].name,
+                   emp[i].basic_salary,
+                   emp[i].tax,
+                   emp[i].net_salary);
+            return;
+        }
+    }
+    printf("Employee not found!\n");
+}
+
+// Update
+void updateEmployee(int id){
+
+    for(int i=0;i<count;i++){
+
+        if(emp[i].emp_id == id){
+
+            printf("Enter New Name: ");
+            scanf(" %[^\n]", emp[i].name);
+
+            printf("Enter New Basic Salary: ");
+            scanf("%f",&emp[i].basic_salary);
+
+            if(emp[i].basic_salary < 0){
+                printf("Invalid salary!\n");
+                return;
+            }
+
+            calculateNetSalary(&emp[i]);
+
+            saveToFile();
+
+            printf("Employee updated successfully.\n");
+            return;
+        }
+    }
+
+    printf("Employee not found!\n");
+}
+
+// Delete
+void deleteEmployee(int id){
+
+    for(int i=0;i<count;i++){
+
+        if(emp[i].emp_id == id){
+
+            for(int j=i;j<count-1;j++){
+                emp[j] = emp[j+1];
+            }
+
+            count--;
+
+            saveToFile();
+
+            printf("Employee deleted successfully.\n");
+            return;
+        }
+    }
+
+    printf("Employee not found!\n");
+}
+
+// Save
+void saveToFile(){
+
+    FILE *fp = fopen("employees.txt","w");
+
+    if(fp == NULL){
+        printf("File error!\n");
+        return;
+    }
+
+    for(int i=0;i<count;i++){
+        fprintf(fp,"%d %s %.2f %.2f %.2f\n",
+                emp[i].emp_id,
+                emp[i].name,
+                emp[i].basic_salary,
+                emp[i].tax,
+                emp[i].net_salary);
+    }
+
+    fclose(fp);
+    printf("File saved successfully.\n");
+}
+
+// Load
+void loadFromFile(){
+
+    FILE *fp = fopen("employees.txt","r");
+
+    if(fp == NULL) return;
+
+    while(fscanf(fp,"%d %s %f %f %f",
+                 &emp[count].emp_id,
+                 emp[count].name,
+                 &emp[count].basic_salary,
+                 &emp[count].tax,
+                 &emp[count].net_salary) != EOF){
+        count++;
+    }
+
+    fclose(fp);
+
+    if(count>0)
+        printf("%d records loaded from file.\n",count);
 }
